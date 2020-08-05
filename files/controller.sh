@@ -13,8 +13,12 @@ rsync_stopped=1
 
 supervisorctl stop rsyncd
 
-find /data/incoming/ -type f '(' -wholename "*/.rsync-tmp/*" -o -name "*.warc.gz.*" ')' -delete
-find /data/incoming/ -mindepth 1 -type d -empty -delete
+cleanup_temp() {
+	find /data/incoming/ -type f '(' -wholename "*/.rsync-tmp/*" -o -name "*.warc.gz.*" -o -name "*.warc.zst.*" ')' -delete
+	find /data/incoming/ -mindepth 1 -type d -empty -delete
+}
+
+cleanup_temp
 
 while true; do
 	disk_usage=$(df --output=pcent /data/ | tr -dc '0-9')
@@ -32,8 +36,7 @@ while true; do
 			echo "killing rsyncd"
 			supervisorctl stop rsyncd && rsync_stopped=1
 			pkill -9 -f '^/usr/bin/rsync '
-			find /data/incoming/ -type f '(' -wholename "*/.rsync-tmp/*" -o -name "*.warc.gz.*" ')' -delete
-			find /data/incoming/ -mindepth 1 -type d -empty -delete
+			cleanup_temp
 		fi
 		sleep 5
 		continue
@@ -44,8 +47,7 @@ while true; do
 	fi
 	cat /rsyncd.conf | sed "s|{{tgt_conn}}|${tgt_conn}|g" > /tmp/rsyncd.conf.new && mv /tmp/rsyncd.conf.new /tmp/rsyncd.conf
 	if test -n "${rsync_stopped}"; then
-		find /data/incoming/ -type f '(' -wholename "*/.rsync-tmp/*" -o -name "*.warc.gz.*" ')' -delete
-		find /data/incoming/ -mindepth 1 -type d -empty -delete
+		cleanup_temp
 		supervisorctl start rsyncd && rsync_stopped=
 	fi
 	if test "${tgt_conn}" == "-1" && test -z "${rsync_stopped}"; then
