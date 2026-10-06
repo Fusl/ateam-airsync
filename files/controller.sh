@@ -51,6 +51,8 @@ while true; do
 	fi
 
 	cat /rsyncd.conf | sed "s|{{tgt_conn}}|${tgt_conn}|g" > /tmp/rsyncd.conf.new && \
+	# just to make sure we have a newline in case /rsyncd.conf doesnt contain a final newline
+	echo >> /tmp/rsyncd.conf.new && \
 	echo "$auth_config" >> /tmp/rsyncd.conf.new && \
 	mv /tmp/rsyncd.conf.new /tmp/rsyncd.conf
 

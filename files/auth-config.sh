@@ -10,25 +10,18 @@ if [[ ! -e "$secrets_file" ]]; then
 fi
 
 if [[ ! -f "$secrets_file" ]]; then
-    echo "Invalid rsync secrets file: '$secrets_file' is not a file" >&2
-    exit 1
+	echo "Invalid rsync secrets file: '$secrets_file' is not a file" >&2
+	exit 1
 fi
 
 auth_users=
-while IFS= read -r line || [[ -n "$line" ]]; do
-  # skip empty lines and comments (starting with #)
-	if [[ -z "$line" || "$line" =~ ^# ]]; then
-		continue
-	fi
-	# line needs to be user:password
-	if [[ "$line" != *:* ]]; then
-		echo "Invalid rsync secrets file: expected username:password entries, but got '$line'" >&2
-		exit 1
-	fi
-
-	username=${line%%:*}
+while IFS=: read -r username password || [[ -n "$line" ]]; do
 	if [[ -z "$username" ]]; then
 		echo 'Invalid rsync secrets file: empty username' >&2
+		exit 1
+	fi
+	if [[ -z "$password" ]]; then
+		echo 'Invalid rsync secrets file: empty password' >&2
 		exit 1
 	fi
 
@@ -36,7 +29,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 		auth_users+=,
 	fi
 	auth_users+=$username
-done < "$secrets_file"
+done < <(grep -vE '^($|#)' "$secrets_file")
 
 # no users = don't emit anything
 [[ -n "$auth_users" ]] || exit 0
