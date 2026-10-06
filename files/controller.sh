@@ -5,6 +5,9 @@ test -d /data || {
 	exit 1
 }
 
+# process auth early, so we can fail early if there's issues
+auth_config=$(/auth-config.sh) || exit 1
+
 mkdir -p /data/incoming
 
 chown nobody:nobody /data/incoming
@@ -12,6 +15,7 @@ chown nobody:nobody /data/incoming
 rsync_stopped=1
 
 supervisorctl stop rsyncd
+
 
 cleanup_temp() {
 	find /data/incoming/ -type f '(' -wholename '*/.rsync-tmp/*' -o -name '*.warc.gz.*' -o -name '*.warc.zst.*' ')' -delete
@@ -45,7 +49,11 @@ while true; do
 	else
 		tgt_conn="${MAX_CONN:-100}"
 	fi
-	cat /rsyncd.conf | sed "s|{{tgt_conn}}|${tgt_conn}|g" > /tmp/rsyncd.conf.new && mv /tmp/rsyncd.conf.new /tmp/rsyncd.conf
+
+	cat /rsyncd.conf | sed "s|{{tgt_conn}}|${tgt_conn}|g" > /tmp/rsyncd.conf.new && \
+	echo "$auth_config" >> /tmp/rsyncd.conf.new && \
+	mv /tmp/rsyncd.conf.new /tmp/rsyncd.conf
+
 	if test -n "${rsync_stopped}"; then
 		cleanup_temp
 		supervisorctl start rsyncd && rsync_stopped=
