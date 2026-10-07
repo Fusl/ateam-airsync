@@ -34,5 +34,5 @@ docker run -e "MAX_CONN=18" -e "PORT=873" -e "DISK_LIMIT=50" -e "DISK_HARD_LIMIT
 
 Clients can upload with:
 ```sh
-RSYNC_PASSWORD=mypassword rsync -rltv /path/to/files/ rsync://myuser@host:873/ateam-airsync/
+RSYNC_PASSWORD=mypassword123 rsync -rltv /path/to/files/ rsync://user2@host:873/ateam-airsync/
 ```
